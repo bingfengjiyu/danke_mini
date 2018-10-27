@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+
+<body>
+ <div>
+        <form id="uploadForm" enctype="multipart/form-data" >
+            <div>
+                <input type="file" name="file" value="" style="color: white">
+                <input type="button" value="上传" id="upFileBtn">
+            </div>
+        </form>
+  </div>
+</body>
+<script>
+    var up_file = function () {
+    var formData = new FormData($('#uploadForm')[0]);
+    $.ajax({
+        url:"/test/up_file",
+        type: "POST",
+        data: formData,
+        async: true,
+        cashe: false,
+        contentType:false,
+        processData:false,
+        success:function (returndata) {
+            alert(returndata)
+    　　},
+    　　error: function (returndata) {
+    　　　　　alert("上传失败！")
+
+    　　})
+</script>
+</html>
