@@ -141,7 +141,7 @@ def usable_coupons():
             print(end_seconds)
             nowtime = int(time.mktime(datetime.now().timetuple()))
 
-            # 有效期内
+            # 可用的优惠券
             if (total_price > coupons.spendMoney) and (nowtime < end_seconds) and (nowtime > start_seconds):
                 print("coupons.to_dict():%s" % coupons.to_dict())
                 coupons_list.append(coupons.to_dict())
