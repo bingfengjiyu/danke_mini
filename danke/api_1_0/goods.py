@@ -1,16 +1,18 @@
 # coding:utf-8
 import re
 
+from datetime import datetime
 import requests
 import base64
 
+import time
 from flask import json
 from flask import session,request,jsonify,current_app
 from sqlalchemy import or_, desc
 
 from danke.api_1_0.upload import api_upload
 from danke.models import User, Address, Goods, GoodsType, GoodsSku, IndexGoodsBanner, PromotionBanner, GoodsImage, \
-    GoodsColor, GoodsModel, Classify
+    GoodsColor, GoodsModel, Classify, DiscountCoupons, Coupons_user
 from . import api
 from danke import db,models,constants,redis_store
 
@@ -1042,8 +1044,39 @@ def ready_buy():
     if good:
         if type=="1":
             price = good.price_unit
+            total_price = goods.price_unit * int(num)
         elif type=="2":
             price = good.group_price
+
+    coupons_list = []
+    for coupons in goods.coupons:
+        print(coupons.id)
+        try:
+            # 领取优惠券的对象
+            couponsuser = Coupons_user.query.filter(Coupons_user.user_id == user_id,
+                                                    Coupons_user.coupons_id == coupons.id).first()
+        except Exception as e:
+            current_app.logger.error(e)
+            return jsonify(code=210, msg="查询信息异常")
+
+        if couponsuser.status == "0":
+            try:
+                # 优惠券的对象
+                coupons = DiscountCoupons.query.filter(DiscountCoupons.id == coupons.id).first()
+            except Exception as e:
+                current_app.logger.error(e)
+                return jsonify(code=209, msg="数据为空")
+
+            start_seconds = int(time.mktime(coupons.starttime.timetuple()))
+            print(start_seconds)
+            end_seconds = int(time.mktime(coupons.endtime.timetuple()))
+            print(end_seconds)
+            nowtime = int(time.mktime(datetime.now().timetuple()))
+
+            # 可用的优惠券
+            if (total_price > coupons.spendMoney) and (nowtime < end_seconds) and (nowtime > start_seconds):
+                print("coupons.to_dict():%s" % coupons.to_dict())
+                coupons_list.append(coupons.to_dict())
 
     goodsinfo={
         "name":good.name,
@@ -1057,7 +1090,7 @@ def ready_buy():
     data = {
         "address":ad.to_dict(),
         "goodsinfo":goodsinfo,
-        #  "usable_coupons": 有没有可用优惠券
+        "coupons_list":coupons_list,
     }
     if all([ad,goods,good,color,model]):
         return jsonify(code=200, msg="请求成功", data=data)
